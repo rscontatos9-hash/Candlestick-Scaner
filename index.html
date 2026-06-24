@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CandleVision AI | Institutional Scanner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #05070d; 
+            --card: rgba(13, 17, 28, 0.65); 
+            --border: rgba(255, 255, 255, 0.08);
+            --buy: #00ff9d; --buy-glow: rgba(0, 255, 157, 0.4);
+            --sell: #ff2e63; --sell-glow: rgba(255, 46, 99, 0.4);
+            --wait: #ffb800; --wait-glow: rgba(255, 184, 0, 0.4);
+            --neon: #00d2ff; --neon-glow: rgba(0, 210, 255, 0.4);
+            --gold: #ffd700;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { 
+            background: var(--bg); 
+            color: #f8fafc; 
+            font-family: 'Space Grotesk', sans-serif; 
+            overflow-x: hidden; 
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(0, 210, 255, 0.08) 0%, transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(0, 255, 157, 0.05) 0%, transparent 25%),
+                radial-gradient(circle at 50% 100%, rgba(255, 46, 99, 0.05) 0%, transparent 25%);
+        }
+        body::after { 
+            content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 1;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E"); 
+        }
+
+        .glass { 
+            background: var(--card); 
+            backdrop-filter: blur(24px) saturate(180%); 
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border: 1px solid var(--border); 
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7), inset 0 1px 0 0 rgba(255,255,255,0.05); 
+        }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* Upload Zone */
+        .upload-zone { 
+            border: 1px dashed rgba(255, 255, 255, 0.15); 
+            border-radius: 20px; padding: 50px 20px; 
+            text-align: center; transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1); 
+            position: relative; overflow: hidden; 
+            background: rgba(0, 0, 0, 0.3); cursor: pointer; 
+        }
+        .upload-zone:hover { border-color: var(--neon); background: rgba(0, 210, 255, 0.05); transform: translateY(-2px); }
+        .upload-zone:hover i { color: var(--neon); transform: scale(1.1); }
+        .upload-input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10; }
+
+        .img-preview-box { display: none; position: relative; width: 100%; border-radius: 16px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
+        .img-preview-box img { width: 100%; height: auto; display: block; filter: contrast(1.1) brightness(0.95); }
+        
+        /* Scanner Effects */
+        .laser-beam { position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: var(--neon); box-shadow: 0 0 20px 5px var(--neon-glow); z-index: 20; display: none; }
+        .scanning .laser-beam { display: block; animation: scan 1.8s ease-in-out infinite alternate; }
+        @keyframes scan { 0% { top: 0; opacity: 0.8; } 100% { top: 100%; opacity: 0.8; } }
+
+        .grid-overlay { position: absolute; inset: 0; background-image: linear-gradient(rgba(0, 210, 255, 0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 210, 255, 0.15) 1px, transparent 1px); background-size: 25px 25px; z-index: 15; pointer-events: none; opacity: 0.3; transition: opacity 0.3s; }
+        .scanning .grid-overlay { opacity: 0.8; animation: gridPulse 1s linear infinite; }
+        @keyframes gridPulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.9; } }
+
+        /* Buttons */
+        .btn-master { 
+            background: linear-gradient(135deg, #0066ff 0%, #00d2ff 100%); 
+            transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1); 
+            font-weight: 800; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; 
+            padding: 20px; border-radius: 14px; border: none; cursor: pointer; color: white; 
+            box-shadow: 0 10px 30px var(--neon-glow), inset 0 1px 0 0 rgba(255,255,255,0.3); 
+            width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; 
+            position: relative; overflow: hidden;
+        }
+        .btn-master::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); transition: left 0.6s; }
+        .btn-master:hover::before { left: 100%; }
+        .btn-master:hover { transform: translateY(-3px); box-shadow: 0 15px 40px var(--neon-glow); }
+        .btn-master:disabled { background: #1a2233; color: #475569; box-shadow: none; cursor: not-allowed; transform: none; }
+        .btn-master:disabled::before { display: none; }
+
+        .btn-clear { 
+            transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; 
+            border-radius: 14px; cursor: pointer; background: rgba(255, 46, 99, 0.05); 
+            border: 1px solid rgba(255, 46, 99, 0.2); color: #ff2e63; 
+        }
+        .btn-clear:hover { background: rgba(255, 46, 99, 0.15); border-color: rgba(255, 46, 99, 0.6); transform: translateY(-2px); }
+        .btn-clear:disabled { opacity: 0.3; cursor: not-allowed; transform: none; background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.05); color: #64748b; }
+
+        /* Drawer (Vault) */
+        .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 60; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+        .drawer-overlay.open { opacity: 1; pointer-events: auto; }
+        .drawer-panel { position: fixed; top: 0; left: 0; width: min(360px, 85vw); height: 100vh; background: #070b14; border-right: 1px solid var(--border); z-index: 70; transform: translateX(-100%); transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1); display: flex; flex-direction: column; box-shadow: 20px 0 60px rgba(0,0,0,0.8); }
+        .drawer-panel.open { transform: translateX(0); }
+
+        /* Results UI */
+        .fade-in { animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+        .premium-badge { padding: 2px 8px; font-size: 9px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; border-radius: 4px; background: linear-gradient(135deg, #ffd700, #ffaf00); color: #000; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--neon); border-radius: 2px; }
+    </style>
+</head>
+<body class="relative z-10 flex flex-col items-center">
+
+    <!-- VAULT BUTTON -->
+    <button onclick="toggleVault()" class="fixed top-4 left-4 z-50 w-12 h-12 flex items-center justify-center rounded-xl bg-slate-900/80 backdrop-blur-md border border-blue-500/30 text-blue-400 hover:text-white hover:border-blue-500 hover:bg-blue-500/10 transition-all shadow-[0_0_20px_rgba(0,210,255,0.2)]">
+        <i class="fa-solid fa-shield-halved"></i>
+    </button>
+
+    <header class="w-full max-w-2xl text-center mb-10 mt-10 px-4">
+        <div class="inline-flex items-center gap-2 mb-4 px-4 py-1.5 rounded-full border border-slate-700 bg-slate-900/50 backdrop-blur-sm">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="text-[10px] font-bold tracking-[0.2em] text-slate-300 uppercase">Sistema Online</span>
+            <span class="premium-badge">PRO</span>
+        </div>
+        <h1 class="text-4xl md:text-5xl font-extrabold tracking-tighter text-white mb-2">
+            CANDLE<span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">VISION</span> <span class="text-slate-600 font-light">AI</span>
+        </h1>
+        <p class="text-[11px] text-slate-400 tracking-[0.3em] uppercase font-semibold">Institutional Reversal Scanner</p>
+    </header>
+
+    <main class="w-full max-w-2xl p-4 md:p-6 pb-24">
+
+        <!-- UPLOAD MODULE -->
+        <section class="glass rounded-[24px] p-6 md:p-8 mb-6 relative overflow-hidden">
+            <div class="absolute top-0 right-0 bg-gradient-to-r from-blue-900/40 to-cyan-900/40 border-b border-l border-blue-500/30 text-cyan-300 text-[9px] font-bold px-4 py-2 rounded-bl-2xl tracking-widest uppercase flex items-center gap-2 z-10">
+                <i class="fa-solid fa-microchip"></i> Vision Engine v2.5
+            </div>
+
+            <h2 class="text-sm font-bold text-white uppercase tracking-widest mb-2 mt-4 flex items-center gap-2">
+                <i class="fa-solid fa-camera-retro text-cyan-400"></i> Captura do Gráfico
+            </h2>
+            <p class="text-[12px] text-slate-400 mb-6 leading-relaxed">
+                Tire um print do gráfico no MetaTrader, TradingView ou corretora. O motor identificará padrões institucionais de reversão.
+            </p>
+
+            <div id="upload-box" class="upload-zone group">
+                <input type="file" accept="image/*" id="image-input" class="upload-input" onchange="handleImageUpload(event)">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-full border border-slate-700 flex items-center justify-center bg-slate-900/50 transition-all group-hover:border-cyan-500 group-hover:shadow-[0_0_20px_rgba(0,210,255,0.3)]">
+                    <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-500 transition-colors"></i>
+                </div>
+                <p class="text-sm font-bold text-white uppercase tracking-widest mb-1">Anexar Gráfico</p>
+                <p class="text-[10px] text-slate-500 tracking-wider">Formatos: JPG, PNG, WEBP</p>
+            </div>
+
+            <div id="preview-container" class="img-preview-box mt-4">
+                <img id="image-preview" src="" alt="Gráfico">
+                <div class="grid-overlay"></div>
+                <div class="laser-beam"></div>
+                <div class="absolute top-3 left-3 bg-black/60 backdrop-blur-sm px-2 py-1 rounded text-[9px] mono text-cyan-400 tracking-widest border border-cyan-500/30">
+                    <i class="fa-solid fa-circle text-[6px] mr-1 animate-pulse"></i> SCANNING TARGET
+                </div>
+            </div>
+
+            <div class="flex gap-3 mt-6">
+                <button id="btn-clear" onclick="resetApp()" disabled class="btn-clear w-1/4">
+                    <i class="fa-solid fa-trash-can text-lg"></i>
+                </button>
+                <button id="btn-scan" onclick="runVisionAnalysis()" disabled class="btn-master w-3/4 !mt-0">
+                    <i class="fa-solid fa-crosshairs"></i> Iniciar Varredura
+                </button>
+            </div>
+        </section>
+
+        <!-- RESULT PANEL -->
+        <section id="result-panel" class="hidden">
+            <div id="verdict-card" class="glass rounded-[24px] p-6 md:p-8 border-t-4 transition-all duration-500 shadow-2xl relative overflow-hidden">
+                
+                <!-- Decorative gradient line -->
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-current to-transparent opacity-50"></div>
+
+                <div class="text-center mb-8 border-b border-slate-700/50 pb-6">
+                    <h3 class="text-[10px] text-slate-400 uppercase tracking-[0.3em] font-bold mb-4">Laudo do Algoritmo</h3>
+                    <div id="verdict-badge" class="inline-flex items-center gap-3 px-8 py-4 rounded-2xl border-2 font-black text-xl md:text-2xl tracking-widest uppercase mb-4 shadow-xl transition-all">
+                        <!-- Preenchido via JS -->
+                    </div>
+                    <div class="mt-4">
+                        <span class="text-[10px] text-slate-500 uppercase tracking-widest font-bold block mb-2">Padrão Detectado</span>
+                        <p id="pattern-name" class="text-sm font-bold text-white uppercase tracking-widest bg-slate-900/80 inline-block px-4 py-2 rounded-lg border border-slate-700"></p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-4">
+                    <div class="bg-slate-950/60 border border-slate-800 p-5 rounded-2xl">
+                        <div class="flex justify-between items-center mb-3">
+                            <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Confiabilidade Institucional</p>
+                            <span id="confidence-text" class="text-xl font-bold mono text-white">0%</span>
+                        </div>
+                        <div class="h-2.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700/50 relative">
+                            <div id="confidence-bar" class="h-full transition-all duration-1000 w-0 rounded-full relative" style="background: linear-gradient(90deg, #0066ff, #00d2ff);">
+                                <div class="absolute right-0 top-0 h-full w-4 bg-white/50 blur-sm"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950/60 border border-slate-800 p-5 rounded-2xl">
+                        <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-brain text-cyan-500"></i> Parecer Técnico Quantitativo
+                        </p>
+                        <p id="ai-explanation" class="text-[13px] text-slate-300 leading-relaxed text-justify font-light"></p>
+                    </div>
+                </div>
+
+                <button onclick="resetApp()" class="w-full mt-6 bg-transparent border border-slate-700 hover:bg-slate-800/50 hover:border-slate-600 text-slate-400 hover:text-white font-bold py-4 rounded-2xl text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-arrows-rotate"></i> Escanear Novo Gráfico
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- DRAWER COFRE -->
+    <div id="vault-overlay" onclick="toggleVault()" class="drawer-overlay"></div>
+    <aside id="vault-drawer" class="drawer-panel">
+        <div class="p-6 border-b border-slate-800 flex justify-between items-center bg-[#020617]">
+            <h2 class="text-sm font-bold text-white uppercase tracking-widest flex items-center gap-2">
+                <i class="fa-solid fa-fingerprint text-cyan-400"></i> Cofre de Segurança
+            </h2>
+            <button onclick="toggleVault()" class="text-slate-500 hover:text-red-400 text-xl transition-colors w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-800">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="p-6 flex-1 overflow-y-auto">
+            <div class="flex items-center gap-3 mb-6 p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                <i class="fa-solid fa-shield-halved text-2xl text-cyan-400"></i>
+                <div>
+                    <p class="text-xs font-bold text-white">Conexão Criptografada</p>
+                    <p class="text-[10px] text-slate-500">Google Gemini API</p>
+                </div>
+            </div>
+            
+            <p class="text-xs text-slate-400 mb-6 leading-relaxed">
+                A tecnologia de "Visão Computacional" exige o motor <strong class="text-white">Google Gemini Pro/Flash</strong>. Insira sua chave de desenvolvedor para liberar o scanner.
+            </p>
+            
+            <label class="block text-[10px] text-cyan-400 font-bold uppercase tracking-wider mb-2">API Key Secreta</label>
+            <div class="relative mb-6">
+                <input type="password" id="api-key-input" placeholder="AIzaSy..." class="w-full bg-slate-950 border border-slate-700 rounded-xl p-4 pr-10 text-xs font-mono text-white focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all">
+                <i class="fa-solid fa-lock absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 text-xs"></i>
+            </div>
+            
+            <div class="bg-gradient-to-br from-cyan-900/10 to-blue-900/10 border border-cyan-900/30 p-4 rounded-xl mb-6">
+                <p class="text-[10px] text-cyan-300 leading-relaxed font-medium">
+                    <strong class="text-cyan-400 block mb-2 text-[11px]">COMO OBTER A CHAVE:</strong>
+                    1. Acesse o <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-white underline font-bold">Google AI Studio</a>.<br>
+                    2. Clique em "Create API Key".<br>
+                    3. Copie e cole no campo acima.
+                </p>
+            </div>
+            
+            <button onclick="saveApiKey()" class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-4 rounded-xl text-xs uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(0,210,255,0.3)] flex items-center justify-center gap-2">
+                <i class="fa-solid fa-shield-check"></i> Salvar e Ativar Visão
+            </button>
+            
+            <p class="text-[9px] text-slate-600 text-center mt-6 leading-relaxed">
+                Sua chave é armazenada apenas no seu navegador (localStorage) e nunca é enviada para servidores externos.
+            </p>
+        </div>
+    </aside>
+
+    <script>
+        // ==========================================
+        // 1. GESTÃO DO COFRE (GEMINI API)
+        // ==========================================
+        let GEMINI_API_KEY = localStorage.getItem("forex_vision_key") || "";
+        let base64Image = null;
+        let mimeType = null;
+
+        function toggleVault() {
+            const overlay = document.getElementById('vault-overlay');
+            const drawer = document.getElementById('vault-drawer');
+            const isOpen = drawer.classList.contains('open');
+            
+            if (!isOpen) {
+                document.getElementById('api-key-input').value = GEMINI_API_KEY;
+                overlay.classList.add('open');
+                drawer.classList.add('open');
+            } else {
+                overlay.classList.remove('open');
+                drawer.classList.remove('open');
+            }
+        }
+
+        function saveApiKey() {
+            const key = document.getElementById('api-key-input').value.trim();
+            if (!key) { 
+                alert("Insira uma chave válida."); 
+                return; 
+            }
+            GEMINI_API_KEY = key;
+            localStorage.setItem("forex_vision_key", key);
+            
+            // Feedback visual bonito
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Visão Ativada!';
+            btn.classList.add('bg-emerald-500');
+            
+            setTimeout(() => {
+                toggleVault();
+                btn.innerHTML = originalText;
+                btn.classList.remove('bg-emerald-500');
+            }, 1200);
+        }
+
+        // ==========================================
+        // 2. PROCESSAMENTO DE IMAGEM
+        // ==========================================
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('upload-box').style.display = 'none';
+                const previewBox = document.getElementById('preview-container');
+                const previewImg = document.getElementById('image-preview');
+                
+                previewImg.src = e.target.result;
+                previewBox.style.display = 'block';
+                
+                base64Image = e.target.result.split(',')[1];
+                mimeType = file.type;
+
+                document.getElementById('btn-scan').disabled = false;
+                document.getElementById('btn-clear').disabled = false;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function resetApp() {
+            base64Image = null;
+            mimeType = null;
+            document.getElementById('image-input').value = "";
+            document.getElementById('preview-container').style.display = 'none';
+            document.getElementById('upload-box').style.display = 'block';
+            
+            document.getElementById('btn-scan').disabled = true;
+            document.getElementById('btn-clear').disabled = true;
+            
+            document.getElementById('result-panel').classList.add('hidden');
+            document.getElementById('preview-container').classList.remove('scanning');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ==========================================
+        // 3. O CÉREBRO QUANTITATIVO (GEMINI VISION)
+        // ==========================================
+        async function runVisionAnalysis() {
+            if (!base64Image) { alert("Anexe a imagem do gráfico primeiro."); return; }
+            if (!GEMINI_API_KEY) { 
+                alert("A Visão Computacional requer a chave do Gemini no Cofre."); 
+                toggleVault(); 
+                return; 
+            }
+
+            const btnScan = document.getElementById('btn-scan');
+            const btnClear = document.getElementById('btn-clear');
+            const previewContainer = document.getElementById('preview-container');
+            const resultPanel = document.getElementById('result-panel');
+
+            btnScan.disabled = true;
+            btnClear.disabled = true;
+            btnScan.innerHTML = '<i class="fa-solid fa-satellite-dish fa-spin"></i> Processando Matriz...';
+            previewContainer.classList.add('scanning');
+            resultPanel.classList.add('hidden');
+
+            const prompt = `Você é um robô Analista Quantitativo Institucional de Forex/Cripto especializado em Price Action avançado.
+Eu enviei a imagem de um gráfico de velas (candlesticks).
+Sua missão:
+1. Identifique a tendência principal na imagem.
+2. Identifique o padrão de candlestick mais recente ou mais forte de reversão na imagem (ex: Bullish Engulfing, Bearish Engulfing, Hammer/Martelo, Shooting Star, Morning Star, Evening Star, Doji, Pin Bar).
+3. Determine se a entrada é segura para BUY (Compra), SELL (Venda) ou se o mercado está feio e a recomendação é WAIT (Ficar de fora).
+
+Responda EXCLUSIVAMENTE em formato JSON puro, sem nenhum texto antes ou depois, seguindo essa estrutura:
+{
+  "pattern": "Nome do Padrão Encontrado",
+  "direction": "BUY" ou "SELL" ou "WAIT",
+  "confidence": número inteiro de 0 a 100,
+  "explanation": "Explicação técnica curta de 2 ou 3 frases do porquê tomar essa decisão baseada na imagem"
+}`;
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+            try {
+                const payload = {
+                    contents: [{
+                        parts: [
+                            { text: prompt },
+                            { inline_data: { mime_type: mimeType, data: base64Image } }
+                        ]
+                    }],
+                    generationConfig: { temperature: 0.1 } 
+                };
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error?.message || "Falha na conexão com a Visão Computacional.");
+                }
+
+                let textResponse = data.candidates[0].content.parts[0].text;
+                
+                const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
+                if (!jsonMatch) throw new Error("A IA não retornou um laudo estruturado válido.");
+                
+                const analysis = JSON.parse(jsonMatch[0]);
+
+                renderResults(analysis);
+
+            } catch (error) {
+                console.error(error);
+                if (error.message.includes("API key not valid")) {
+                    alert("A chave da API está inválida. Verifique o cofre.");
+                    toggleVault();
+                } else {
+                    alert("Erro na leitura gráfica: " + error.message);
+                }
+            } finally {
+                btnScan.disabled = false;
+                btnClear.disabled = false;
+                btnScan.innerHTML = '<i class="fa-solid fa-crosshairs"></i> Iniciar Varredura';
+                previewContainer.classList.remove('scanning'); 
+            }
+        }
+
+        // ==========================================
+        // 4. INJEÇÃO DOS RESULTADOS NA TELA
+        // ==========================================
+        function renderResults(data) {
+            const card = document.getElementById('verdict-card');
+            const badge = document.getElementById('verdict-badge');
+            const pattern = document.getElementById('pattern-name');
+            const confText = document.getElementById('confidence-text');
+            const confBar = document.getElementById('confidence-bar');
+            const explanation = document.getElementById('ai-explanation');
+
+            // Reset de classes e cores (padrão Premium)
+            card.classList.remove('text-emerald-400', 'text-rose-400', 'text-amber-400', 'border-emerald-500', 'border-rose-500', 'border-amber-500');
+            badge.classList.remove('text-emerald-400', 'border-emerald-500', 'bg-emerald-900/20', 'text-rose-400', 'border-rose-500', 'bg-rose-900/20', 'text-amber-400', 'border-amber-500', 'bg-amber-900/20');
+            confBar.classList.remove('bg-emerald-500', 'bg-rose-500', 'bg-amber-500');
+            confBar.style.background = '';
+
+            // Aplica Cores Baseado na Direção
+            if (data.direction === 'BUY') {
+                card.classList.add('border-emerald-500', 'text-emerald-400');
+                badge.classList.add('text-emerald-400', 'border-emerald-500', 'bg-emerald-900/20', 'shadow-[0_0_30px_rgba(0,255,157,0.2)]');
+                confBar.style.background = 'linear-gradient(90deg, #008f5d, #00ff9d)';
+                badge.innerHTML = `<i class="fa-solid fa-arrow-trend-up"></i> FORTE COMPRA`;
+            } 
+            else if (data.direction === 'SELL') {
+                card.classList.add('border-rose-500', 'text-rose-400');
+                badge.classList.add('text-rose-400', 'border-rose-500', 'bg-rose-900/20', 'shadow-[0_0_30px_rgba(255,46,99,0.2)]');
+                confBar.style.background = 'linear-gradient(90deg, #cc0033, #ff2e63)';
+                badge.innerHTML = `<i class="fa-solid fa-arrow-trend-down"></i> FORTE VENDA`;
+            } 
+            else { 
+                card.classList.add('border-amber-500', 'text-amber-400');
+                badge.classList.add('text-amber-400', 'border-amber-500', 'bg-amber-900/20', 'shadow-[0_0_30px_rgba(255,184,0,0.2)]');
+                confBar.style.background = 'linear-gradient(90deg, #cc8f00, #ffb800)';
+                badge.innerHTML = `<i class="fa-solid fa-hand"></i> AGUARDAR`;
+            }
+
+            pattern.innerText = data.pattern;
+            explanation.innerText = data.explanation;
+            
+            confBar.style.width = '0%';
+            confText.innerText = '0%';
+
+            document.getElementById('result-panel').classList.remove('hidden');
+            document.getElementById('result-panel').classList.add('fade-in');
+
+            setTimeout(() => {
+                confBar.style.width = `${data.confidence}%`;
+                
+                let c = 0;
+                let interval = setInterval(() => {
+                    c += 2;
+                    if(c >= data.confidence) {
+                        c = data.confidence;
+                        clearInterval(interval);
+                    }
+                    confText.innerText = `${c}%`;
+                }, 20);
+
+                document.getElementById('result-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 200);
+        }
+    </script>
+</body>
+</html>
