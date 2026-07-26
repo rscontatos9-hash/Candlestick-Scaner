@@ -3,162 +3,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CandleVision AI | Elite Pro Predictor</title>
+    <title>CandleVision AI | Dual Market Scanner</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         :root {
-            --bg: #030509; 
-            --card: rgba(13, 17, 28, 0.7); 
-            --border: rgba(255, 255, 255, 0.06);
-            --buy: #10b981; --buy-glow: rgba(16, 185, 129, 0.5);
-            --sell: #ef4444; --sell-glow: rgba(239, 68, 68, 0.5);
-            --wait: #f59e0b; --wait-glow: rgba(245, 158, 11, 0.5);
-            --neon: #0ea5e9; --neon-glow: rgba(14, 165, 233, 0.5);
+            --bg: #05070d; 
+            --card: rgba(13, 17, 28, 0.65); 
+            --border: rgba(255, 255, 255, 0.08);
+            --buy: #00ff9d; --buy-glow: rgba(0, 255, 157, 0.4);
+            --sell: #ff2e63; --sell-glow: rgba(255, 46, 99, 0.4);
+            --wait: #ffb800; --wait-glow: rgba(255, 184, 0, 0.4);
+            --neon: #00d2ff; --neon-glow: rgba(0, 210, 255, 0.4);
+            --gold: #ffd700;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         body { 
-            background: var(--bg); color: #f8fafc; font-family: 'Space Grotesk', sans-serif; 
-            overflow-x: hidden; min-height: 100vh;
+            background: var(--bg); 
+            color: #f8fafc; 
+            font-family: 'Space Grotesk', sans-serif; 
+            overflow-x: hidden; 
+            min-height: 100vh;
             background-image: 
-                radial-gradient(circle at 10% 40%, rgba(14, 165, 233, 0.05) 0%, transparent 40%),
-                radial-gradient(circle at 90% 60%, rgba(16, 185, 129, 0.03) 0%, transparent 40%);
+                radial-gradient(circle at 15% 50%, rgba(0, 210, 255, 0.08) 0%, transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(0, 255, 157, 0.05) 0%, transparent 25%),
+                radial-gradient(circle at 50% 100%, rgba(255, 46, 99, 0.05) 0%, transparent 25%);
         }
         body::after { 
             content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 1;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.02'/%3E%3C/svg%3E"); 
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E"); 
         }
 
-        .glass-pro { 
-            background: var(--card); backdrop-filter: blur(24px) saturate(180%); 
+        .glass { 
+            background: var(--card); 
+            backdrop-filter: blur(24px) saturate(180%); 
             -webkit-backdrop-filter: blur(24px) saturate(180%);
-            border: 1px solid var(--border); border-top: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6); 
+            border: 1px solid var(--border); 
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7), inset 0 1px 0 0 rgba(255,255,255,0.05); 
         }
         .mono { font-family: 'JetBrains Mono', monospace; }
 
+        /* Mode Selector */
+        .mode-btn { transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
+        .mode-btn.active-otc { background: rgba(0, 210, 255, 0.15); color: #00d2ff; border-color: rgba(0, 210, 255, 0.5); box-shadow: 0 0 15px rgba(0, 210, 255, 0.2); }
+        .mode-btn.active-forex { background: rgba(255, 215, 0, 0.15); color: #ffd700; border-color: rgba(255, 215, 0, 0.5); box-shadow: 0 0 15px rgba(255, 215, 0, 0.2); }
+
         /* Upload Zone */
         .upload-zone { 
-            border: 1px dashed rgba(14, 165, 233, 0.3); border-radius: 20px; padding: 40px 20px; 
-            text-align: center; transition: all 0.4s ease; position: relative; overflow: hidden; 
-            background: rgba(0, 0, 0, 0.4); cursor: pointer; 
+            border: 1px dashed rgba(255, 255, 255, 0.15); 
+            border-radius: 20px; padding: 50px 20px; 
+            text-align: center; transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1); 
+            position: relative; overflow: hidden; 
+            background: rgba(0, 0, 0, 0.3); cursor: pointer; 
         }
-        .upload-zone:hover { border-color: var(--neon); background: rgba(14, 165, 233, 0.05); transform: translateY(-2px); }
-        .upload-zone:hover i.cloud-icon { color: var(--neon); transform: scale(1.1); }
+        .upload-zone:hover { border-color: var(--neon); background: rgba(0, 210, 255, 0.05); transform: translateY(-2px); }
+        .upload-zone:hover i { color: var(--neon); transform: scale(1.1); }
         .upload-input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10; }
 
-        .img-preview-box { display: none; position: relative; width: 100%; border-radius: 16px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.8); }
+        .img-preview-box { display: none; position: relative; width: 100%; border-radius: 16px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
         .img-preview-box img { width: 100%; height: auto; display: block; filter: contrast(1.1) brightness(0.95); }
         
         /* Scanner Effects */
-        .laser-beam { position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: #fff; box-shadow: 0 0 15px 4px var(--neon-glow); z-index: 20; display: none; }
-        .scanning .laser-beam { display: block; animation: scan 1.5s ease-in-out infinite alternate; }
-        @keyframes scan { 0% { top: 0; opacity: 0.9; } 100% { top: 100%; opacity: 0.9; } }
-        
-        .scanning .img-preview-box img { filter: contrast(1.2) brightness(0.8) sepia(1.2) hue-rotate(180deg); transition: filter 0.5s; }
+        .laser-beam { position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: var(--neon); box-shadow: 0 0 20px 5px var(--neon-glow); z-index: 20; display: none; }
+        .scanning .laser-beam { display: block; animation: scan 1.8s ease-in-out infinite alternate; }
+        @keyframes scan { 0% { top: 0; opacity: 0.8; } 100% { top: 100%; opacity: 0.8; } }
 
-        /* Selectors */
-        select.custom-select { appearance: none; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 12px 14px; border-radius: 12px; font-family: 'JetBrains Mono', monospace; font-size: 11px; outline: none; width: 100%; transition: all 0.3s; }
-        select.custom-select:focus { border-color: var(--neon); box-shadow: 0 0 10px var(--neon-glow); }
+        .grid-overlay { position: absolute; inset: 0; background-image: linear-gradient(rgba(0, 210, 255, 0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 210, 255, 0.15) 1px, transparent 1px); background-size: 25px 25px; z-index: 15; pointer-events: none; opacity: 0.3; transition: opacity 0.3s; }
+        .scanning .grid-overlay { opacity: 0.8; animation: gridPulse 1s linear infinite; }
+        @keyframes gridPulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.9; } }
 
         /* Buttons */
         .btn-master { 
-            background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%); transition: all 0.3s ease; 
+            background: linear-gradient(135deg, #0066ff 0%, #00d2ff 100%); 
+            transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1); 
             font-weight: 800; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; 
-            padding: 18px; border-radius: 14px; border: none; cursor: pointer; color: white; 
-            box-shadow: 0 10px 30px var(--neon-glow); width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; 
+            padding: 20px; border-radius: 14px; border: none; cursor: pointer; color: white; 
+            box-shadow: 0 10px 30px var(--neon-glow), inset 0 1px 0 0 rgba(255,255,255,0.3); 
+            width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; 
+            position: relative; overflow: hidden;
         }
-        .btn-master:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 15px 40px var(--neon-glow); filter: brightness(1.1); }
-        .btn-master:disabled { background: #1e293b; color: #64748b; box-shadow: none; cursor: not-allowed; transform: none; }
+        .btn-master::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); transition: left 0.6s; }
+        .btn-master:hover::before { left: 100%; }
+        .btn-master:hover { transform: translateY(-3px); box-shadow: 0 15px 40px var(--neon-glow); }
+        .btn-master:disabled { background: #1a2233; color: #475569; box-shadow: none; cursor: not-allowed; transform: none; }
+        .btn-master:disabled::before { display: none; }
 
-        .btn-clear { transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; border-radius: 14px; cursor: pointer; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #ef4444; }
-        .btn-clear:hover:not(:disabled) { background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.5); transform: translateY(-2px); }
-        .btn-clear:disabled { opacity: 0.4; cursor: not-allowed; background: rgba(255,255,255,0.05); border-color: transparent; color: #64748b; }
+        .btn-clear { 
+            transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; 
+            border-radius: 14px; cursor: pointer; background: rgba(255, 46, 99, 0.05); 
+            border: 1px solid rgba(255, 46, 99, 0.2); color: #ff2e63; 
+        }
+        .btn-clear:hover { background: rgba(255, 46, 99, 0.15); border-color: rgba(255, 46, 99, 0.6); transform: translateY(-2px); }
+        .btn-clear:disabled { opacity: 0.3; cursor: not-allowed; transform: none; background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.05); color: #64748b; }
 
-        /* Drawer (Vault) */
+        /* Drawer */
         .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 60; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
         .drawer-overlay.open { opacity: 1; pointer-events: auto; }
-        .drawer-panel { position: fixed; top: 0; left: 0; width: min(360px, 85vw); height: 100vh; background: #020617; border-right: 1px solid var(--border); z-index: 70; transform: translateX(-100%); transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1); display: flex; flex-direction: column; box-shadow: 20px 0 60px rgba(0,0,0,0.8); }
+        .drawer-panel { position: fixed; top: 0; left: 0; width: min(360px, 85vw); height: 100vh; background: #070b14; border-right: 1px solid var(--border); z-index: 70; transform: translateX(-100%); transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1); display: flex; flex-direction: column; box-shadow: 20px 0 60px rgba(0,0,0,0.8); }
         .drawer-panel.open { transform: translateX(0); }
 
-        /* Next Candle LED Colors */
-        .glow-green { text-shadow: 0 0 25px rgba(16, 185, 129, 0.7); color: #10b981; }
-        .glow-red { text-shadow: 0 0 25px rgba(239, 68, 68, 0.7); color: #ef4444; }
-        .glow-gray { text-shadow: 0 0 25px rgba(148, 163, 184, 0.7); color: #94a3b8; }
+        .fade-in { animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 
-        .fade-in { animation: fadeInUp 0.5s ease forwards; }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .premium-badge { padding: 2px 8px; font-size: 9px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; border-radius: 4px; background: linear-gradient(135deg, #ffd700, #ffaf00); color: #000; }
         
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #0ea5e9; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb { background: var(--neon); border-radius: 2px; }
     </style>
 </head>
 <body class="relative z-10 flex flex-col items-center">
 
     <!-- VAULT BUTTON -->
-    <button onclick="toggleVault()" class="fixed top-4 left-4 z-50 w-12 h-12 flex items-center justify-center rounded-xl bg-slate-900/80 backdrop-blur-md border border-sky-500/30 text-sky-400 hover:text-white hover:border-sky-500 hover:bg-sky-500/20 transition-all shadow-[0_0_20px_rgba(14,165,233,0.2)]">
-        <i class="fa-solid fa-shield-halved text-xl"></i>
+    <button onclick="toggleVault()" class="fixed top-4 left-4 z-50 w-12 h-12 flex items-center justify-center rounded-xl bg-slate-900/80 backdrop-blur-md border border-blue-500/30 text-blue-400 hover:text-white hover:border-blue-500 hover:bg-blue-500/10 transition-all shadow-[0_0_20px_rgba(0,210,255,0.2)]">
+        <i class="fa-solid fa-shield-halved"></i>
     </button>
 
-    <header class="w-full max-w-2xl text-center mb-8 mt-12 px-4">
+    <header class="w-full max-w-2xl text-center mb-6 mt-10 px-4">
         <div class="inline-flex items-center gap-2 mb-4 px-4 py-1.5 rounded-full border border-slate-700 bg-slate-900/50 backdrop-blur-sm">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span class="text-[9px] font-bold tracking-[0.2em] text-slate-300 uppercase">Motor de Redundância Ativo</span>
+            <span class="text-[10px] font-bold tracking-[0.2em] text-slate-300 uppercase">Motor Neural 1.5 PRO</span>
+            <span class="premium-badge">DUAL</span>
         </div>
         <h1 class="text-4xl md:text-5xl font-extrabold tracking-tighter text-white mb-2">
-            CANDLE<span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-cyan-300">VISION</span> <span class="text-slate-600 font-light">4.0</span>
+            CANDLE<span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">VISION</span> <span class="text-slate-600 font-light">AI</span>
         </h1>
-        <p class="text-[10px] text-slate-400 tracking-[0.3em] uppercase font-bold">A.I. Predictive Scanner &bull; Elite Pro</p>
+        <p class="text-[11px] text-slate-400 tracking-[0.3em] uppercase font-semibold">Institutional & Algorithmic Scanner</p>
     </header>
 
     <main class="w-full max-w-2xl p-4 md:p-6 pb-24">
 
-        <!-- UPLOAD E CONFIGURAÇÕES -->
-        <section class="glass-pro rounded-[24px] p-5 md:p-8 mb-6 relative overflow-hidden">
-            
-            <!-- Contexto do Gráfico (Seletores) -->
-            <div class="grid grid-cols-2 gap-4 mb-6">
-                <div>
-                    <label class="text-[9px] text-sky-400 font-bold uppercase tracking-wider mb-2 block pl-1">Mercado (Ativo)</label>
-                    <select id="asset-type" class="custom-select">
-                        <option value="Forex (EUR/USD, GBP/JPY...)">Forex (Pares de Moedas)</option>
-                        <option value="Criptomoedas (BTC, ETH...)">Criptomoedas</option>
-                        <option value="B3 / Futuros (Mini Índice, Mini Dólar)">B3 / Futuros (WINF, WDOF)</option>
-                        <option value="Mercado de Ações (Stocks)">Ações / Mercado à Vista</option>
-                        <option value="Opções Binárias (OTC/Normal)">Opções Binárias</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="text-[9px] text-sky-400 font-bold uppercase tracking-wider mb-2 block pl-1">Timeframe (Tempo)</label>
-                    <select id="timeframe" class="custom-select">
-                        <option value="M1 (1 Minuto)">M1 (1 Minuto)</option>
-                        <option value="M5 (5 Minutos)" selected>M5 (5 Minutos)</option>
-                        <option value="M15 (15 Minutos)">M15 (15 Minutos)</option>
-                        <option value="H1 (1 Hora)">H1 (1 Hora)</option>
-                        <option value="H4 (4 Horas)">H4 (4 Horas)</option>
-                        <option value="D1 (Diário)">D1 (Diário)</option>
-                    </select>
-                </div>
+        <!-- DUAL MODE SELECTOR -->
+        <div class="flex gap-2 mb-6 bg-slate-900/40 p-1.5 rounded-2xl border border-slate-700/50 backdrop-blur-md">
+            <button id="btn-mode-otc" onclick="setMode('OTC')" class="mode-btn flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-widest active-otc border border-transparent text-slate-400">
+                <i class="fa-solid fa-bolt mr-2"></i> Binárias OTC
+            </button>
+            <button id="btn-mode-forex" onclick="setMode('FOREX')" class="mode-btn flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-widest border border-transparent text-slate-400 hover:text-white">
+                <i class="fa-solid fa-building-columns mr-2"></i> Forex SMC
+            </button>
+        </div>
+
+        <!-- UPLOAD MODULE -->
+        <section class="glass rounded-[24px] p-6 md:p-8 mb-6 relative overflow-hidden">
+            <div id="mode-badge-corner" class="absolute top-0 right-0 bg-gradient-to-r from-blue-900/40 to-cyan-900/40 border-b border-l border-blue-500/30 text-cyan-300 text-[9px] font-bold px-4 py-2 rounded-bl-2xl tracking-widest uppercase flex items-center gap-2 z-10 transition-colors">
+                <i class="fa-solid fa-microchip"></i> Engine: OTC Algo
             </div>
 
-            <!-- Upload Area -->
+            <h2 class="text-sm font-bold text-white uppercase tracking-widest mb-2 mt-4 flex items-center gap-2">
+                <i class="fa-solid fa-camera-retro text-cyan-400" id="camera-icon"></i> Captura do Gráfico
+            </h2>
+            <p id="mode-desc" class="text-[12px] text-slate-400 mb-6 leading-relaxed">
+                Tire um print do gráfico OTC. O motor buscará quebras de inércia e engolfos contra a massa de operadores.
+            </p>
+
             <div id="upload-box" class="upload-zone group">
                 <input type="file" accept="image/*" id="image-input" class="upload-input" onchange="handleImageUpload(event)">
-                <div class="w-16 h-16 mx-auto mb-4 rounded-full border border-slate-700 flex items-center justify-center bg-slate-900/50 transition-all group-hover:border-sky-500 group-hover:shadow-[0_0_20px_rgba(14,165,233,0.3)]">
-                    <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-500 transition-colors cloud-icon"></i>
+                <div class="w-16 h-16 mx-auto mb-4 rounded-full border border-slate-700 flex items-center justify-center bg-slate-900/50 transition-all group-hover:border-cyan-500 group-hover:shadow-[0_0_20px_rgba(0,210,255,0.3)]" id="upload-icon-box">
+                    <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-500 transition-colors"></i>
                 </div>
-                <p class="text-xs font-bold text-white uppercase tracking-widest mb-1">Anexar Print do Gráfico</p>
-                <p class="text-[10px] text-slate-500 tracking-wider">A IA mapeará a inércia dos blocos de ordem.</p>
+                <p class="text-sm font-bold text-white uppercase tracking-widest mb-1">Anexar Gráfico</p>
+                <p class="text-[10px] text-slate-500 tracking-wider">Certifique-se de que a escala de preços (Eixo Y) está visível.</p>
             </div>
 
-            <!-- Image Preview -->
             <div id="preview-container" class="img-preview-box mt-4">
                 <img id="image-preview" src="" alt="Gráfico">
-                <div class="laser-beam"></div>
-                <div class="absolute bottom-3 right-3 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-lg text-[9px] mono text-sky-400 tracking-widest border border-sky-500/30 flex items-center gap-2">
-                    <i class="fa-solid fa-radar text-[10px] animate-spin"></i> CALCULANDO INÉRCIA...
+                <div class="grid-overlay"></div>
+                <div class="laser-beam" id="laser-beam-fx"></div>
+                <div class="absolute top-3 left-3 bg-black/60 backdrop-blur-sm px-2 py-1 rounded text-[9px] mono text-cyan-400 tracking-widest border border-cyan-500/30" id="target-badge">
+                    <i class="fa-solid fa-circle text-[6px] mr-1 animate-pulse"></i> SCANNING OTC
                 </div>
             </div>
 
@@ -167,73 +180,51 @@
                     <i class="fa-solid fa-trash-can text-lg"></i>
                 </button>
                 <button id="btn-scan" onclick="runVisionAnalysis()" disabled class="btn-master w-3/4 !mt-0">
-                    <i class="fa-solid fa-crosshairs"></i> Executar Leitura Quantitativa
+                    <i class="fa-solid fa-crosshairs"></i> Iniciar Varredura
                 </button>
             </div>
         </section>
 
         <!-- RESULT PANEL -->
         <section id="result-panel" class="hidden">
-            <div class="glass-pro rounded-[24px] p-5 md:p-8 border-t-4 border-sky-500 relative overflow-hidden">
+            <div id="verdict-card" class="glass rounded-[24px] p-6 md:p-8 border-t-4 transition-all duration-500 shadow-2xl relative overflow-hidden">
                 
-                <h3 class="text-[10px] text-slate-400 uppercase tracking-[0.3em] font-bold mb-6 text-center">Dashboard Institucional</h3>
-                
-                <!-- Veredito (Buy/Sell/Wait) -->
-                <div class="text-center mb-6">
-                    <div id="verdict-badge" class="inline-flex items-center gap-3 px-10 py-4 rounded-2xl border-2 font-black text-2xl tracking-widest uppercase shadow-xl">
-                        <!-- JS Inject -->
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-current to-transparent opacity-50"></div>
+
+                <div class="text-center mb-8 border-b border-slate-700/50 pb-6">
+                    <h3 class="text-[10px] text-slate-400 uppercase tracking-[0.3em] font-bold mb-4" id="laudo-title">Laudo OTC</h3>
+                    <div id="verdict-badge" class="inline-flex items-center gap-3 px-8 py-4 rounded-2xl border-2 font-black text-xl md:text-2xl tracking-widest uppercase mb-4 shadow-xl transition-all">
+                        <!-- Preenchido via JS -->
+                    </div>
+                    <div class="mt-4">
+                        <span class="text-[10px] text-slate-500 uppercase tracking-widest font-bold block mb-2">Padrão Detectado</span>
+                        <p id="pattern-name" class="text-sm font-bold text-white uppercase tracking-widest bg-slate-900/80 inline-block px-4 py-2 rounded-lg border border-slate-700"></p>
                     </div>
                 </div>
 
-                <!-- PREVISÃO DA PRÓXIMA VELA (Destaque Principal) -->
-                <div class="bg-[#050810] border border-slate-700/50 p-6 rounded-2xl text-center relative overflow-hidden mb-6 shadow-inner">
-                    <div class="absolute inset-0 bg-gradient-to-b from-transparent to-slate-900/30 pointer-events-none"></div>
-                    <span class="text-[10px] text-slate-500 uppercase tracking-widest font-bold block mb-3 relative z-10">Projeção Visual da Próxima Vela</span>
-                    <div class="flex flex-col items-center justify-center gap-2 relative z-10">
-                        <i id="next-candle-icon" class="fa-solid text-5xl mb-2 drop-shadow-2xl"></i>
-                        <h2 id="next-candle-text" class="text-2xl font-black uppercase tracking-widest"></h2>
-                    </div>
-                </div>
-
-                <!-- GRID de Dados Técnicos -->
-                <div class="grid grid-cols-2 gap-3 mb-6">
-                    <div class="bg-slate-900/40 p-4 rounded-xl border border-slate-700/50 flex flex-col justify-center items-center text-center">
-                        <span class="text-[9px] text-slate-500 uppercase tracking-widest font-bold mb-1">Tendência Macro</span>
-                        <span id="res-trend" class="text-xs font-bold text-white uppercase tracking-wider"></span>
-                    </div>
-                    <div class="bg-slate-900/40 p-4 rounded-xl border border-slate-700/50 flex flex-col justify-center items-center text-center">
-                        <span class="text-[9px] text-slate-500 uppercase tracking-widest font-bold mb-1">Padrão Primário</span>
-                        <span id="res-pattern" class="text-xs font-bold text-sky-400 uppercase tracking-wider"></span>
-                    </div>
-                    <div class="bg-slate-900/40 p-4 rounded-xl border border-slate-700/50 col-span-2 flex flex-col justify-center items-center text-center">
-                        <span class="text-[9px] text-slate-500 uppercase tracking-widest font-bold mb-1">Zonas de Liquidez (Alvos Visíveis)</span>
-                        <span id="res-levels" class="text-xs font-semibold text-slate-300"></span>
-                    </div>
-                </div>
-
-                <!-- Barra de Assertividade -->
-                <div class="bg-[#050810] border border-slate-800 p-5 rounded-2xl mb-4">
-                    <div class="flex justify-between items-center mb-3">
-                        <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Assertividade do Algoritmo</p>
-                        <span id="confidence-text" class="text-2xl font-black mono text-white">0%</span>
-                    </div>
-                    <div class="h-3 bg-slate-900 rounded-full overflow-hidden border border-slate-800 relative">
-                        <div id="confidence-bar" class="h-full transition-all duration-1000 w-0 rounded-full relative" style="background: linear-gradient(90deg, #0ea5e9, #0284c7);">
-                            <div class="absolute right-0 top-0 h-full w-4 bg-white/50 blur-[2px]"></div>
+                <div class="grid grid-cols-1 gap-4">
+                    <div class="bg-slate-950/60 border border-slate-800 p-5 rounded-2xl">
+                        <div class="flex justify-between items-center mb-3">
+                            <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Confiabilidade Algorítmica</p>
+                            <span id="confidence-text" class="text-xl font-bold mono text-white">0%</span>
+                        </div>
+                        <div class="h-2.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700/50 relative">
+                            <div id="confidence-bar" class="h-full transition-all duration-1000 w-0 rounded-full relative" style="background: linear-gradient(90deg, #0066ff, #00d2ff);">
+                                <div class="absolute right-0 top-0 h-full w-4 bg-white/50 blur-sm"></div>
+                            </div>
                         </div>
                     </div>
+
+                    <div class="bg-slate-950/60 border border-slate-800 p-5 rounded-2xl">
+                        <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-brain text-cyan-500" id="brain-icon"></i> Parecer Matemático Extraído
+                        </p>
+                        <p id="ai-explanation" class="text-[13px] text-slate-300 leading-relaxed font-mono whitespace-pre-line"></p>
+                    </div>
                 </div>
 
-                <!-- Explicação Técnica -->
-                <div class="bg-[#050810] border border-slate-800 p-5 rounded-2xl">
-                    <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3 flex items-center gap-2">
-                        <i class="fa-solid fa-microchip text-sky-500"></i> Parecer Quantitativo (Lógica da Operação)
-                    </p>
-                    <p id="ai-explanation" class="text-[12px] text-slate-300 leading-relaxed text-justify font-light"></p>
-                </div>
-
-                <button onclick="resetApp()" class="w-full mt-6 bg-transparent border border-slate-700 hover:bg-slate-800 hover:border-slate-600 text-slate-400 hover:text-white font-bold py-4 rounded-xl text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-rotate-left"></i> Limpar e Escanear Novo Gráfico
+                <button onclick="resetApp()" class="w-full mt-6 bg-transparent border border-slate-700 hover:bg-slate-800/50 hover:border-slate-600 text-slate-400 hover:text-white font-bold py-4 rounded-2xl text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-arrows-rotate"></i> Escanear Novo Gráfico
                 </button>
             </div>
         </section>
@@ -245,98 +236,117 @@
     <aside id="vault-drawer" class="drawer-panel">
         <div class="p-6 border-b border-slate-800 flex justify-between items-center bg-[#020617]">
             <h2 class="text-sm font-bold text-white uppercase tracking-widest flex items-center gap-2">
-                <i class="fa-solid fa-fingerprint text-sky-400"></i> Cofre de API
+                <i class="fa-solid fa-fingerprint text-cyan-400"></i> Cofre de Segurança
             </h2>
             <button onclick="toggleVault()" class="text-slate-500 hover:text-red-400 text-xl transition-colors w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-800">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
         <div class="p-6 flex-1 overflow-y-auto">
-            
-            <div class="bg-emerald-950/30 border border-emerald-900/50 p-4 rounded-xl mb-6 flex gap-3 items-start">
-                <i class="fa-solid fa-network-wired text-emerald-400 mt-1"></i>
-                <p class="text-[10px] text-emerald-200 leading-relaxed">
-                    <strong class="text-emerald-400 block mb-1">SISTEMA ANTI-TRAVAMENTO ATIVADO</strong>
-                    Em caso de congestionamento, o sistema alternará automaticamente a rota de conexão entre os motores Gemini 2.5, 2.0 e 1.5 Flash.
-                </p>
+            <div class="flex items-center gap-3 mb-6 p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+                <i class="fa-solid fa-shield-halved text-2xl text-cyan-400"></i>
+                <div>
+                    <p class="text-xs font-bold text-white">Conexão Criptografada</p>
+                    <p class="text-[10px] text-slate-500">Motor: Gemini 1.5 PRO</p>
+                </div>
             </div>
             
-            <label class="block text-[10px] text-sky-400 font-bold uppercase tracking-wider mb-2">Google Gemini API Key</label>
+            <p class="text-xs text-slate-400 mb-6 leading-relaxed">
+                A tecnologia de precisão milimétrica e leitura OCR exige a versão PRO da API do Google. Insira sua chave para ativar os cálculos matemáticos.
+            </p>
+            
+            <label class="block text-[10px] text-cyan-400 font-bold uppercase tracking-wider mb-2">API Key Secreta</label>
             <div class="relative mb-6">
-                <input type="password" id="api-key-input" placeholder="AIzaSy..." class="w-full bg-slate-950 border border-slate-700 rounded-xl p-4 pr-10 text-xs font-mono text-white focus:border-sky-500 focus:outline-none transition-all">
+                <input type="password" id="api-key-input" placeholder="AIzaSy..." class="w-full bg-slate-950 border border-slate-700 rounded-xl p-4 pr-10 text-xs font-mono text-white focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all">
                 <i class="fa-solid fa-lock absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 text-xs"></i>
             </div>
             
-            <button onclick="saveApiKey()" class="w-full bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-bold py-4 rounded-xl text-xs uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(14,165,233,0.3)] flex items-center justify-center gap-2">
+            <button onclick="saveApiKey()" class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-4 rounded-xl text-xs uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(0,210,255,0.3)] flex items-center justify-center gap-2">
                 <i class="fa-solid fa-shield-check"></i> Salvar e Ativar Visão
             </button>
             
             <p class="text-[9px] text-slate-600 text-center mt-6 leading-relaxed">
-                A sua chave fica criptografada localmente no seu cache.
+                Armazenamento local seguro. Nenhuma imagem ou chave é salva em bancos de dados de terceiros.
             </p>
         </div>
     </aside>
 
     <script>
         // ==========================================
-        // 1. GESTÃO DO COFRE (GEMINI API)
+        // ESTADO GLOBAL & GERENCIAMENTO DE MODO
         // ==========================================
         let GEMINI_API_KEY = localStorage.getItem("forex_vision_key") || "";
         let base64Image = null;
         let mimeType = null;
+        let currentMode = 'OTC'; // OTC ou FOREX
 
+        function setMode(mode) {
+            currentMode = mode;
+            const btnOtc = document.getElementById('btn-mode-otc');
+            const btnForex = document.getElementById('btn-mode-forex');
+            const desc = document.getElementById('mode-desc');
+            const badgeCorner = document.getElementById('mode-badge-corner');
+            const targetBadge = document.getElementById('target-badge');
+            const uploadIconBox = document.getElementById('upload-icon-box');
+            const laser = document.getElementById('laser-beam-fx');
+
+            if (mode === 'OTC') {
+                btnOtc.classList.add('active-otc'); btnOtc.classList.remove('text-slate-400');
+                btnForex.classList.remove('active-forex'); btnForex.classList.add('text-slate-400');
+                desc.innerHTML = "Tire um print do gráfico OTC. O motor buscará quebras de inércia e engolfos contra a massa de operadores.";
+                badgeCorner.innerHTML = '<i class="fa-solid fa-microchip"></i> Engine: OTC Algo';
+                badgeCorner.className = "absolute top-0 right-0 bg-gradient-to-r from-blue-900/40 to-cyan-900/40 border-b border-l border-blue-500/30 text-cyan-300 text-[9px] font-bold px-4 py-2 rounded-bl-2xl tracking-widest uppercase flex items-center gap-2 z-10 transition-colors";
+                targetBadge.innerHTML = '<i class="fa-solid fa-circle text-[6px] mr-1 animate-pulse"></i> SCANNING OTC';
+                targetBadge.className = "absolute top-3 left-3 bg-black/60 backdrop-blur-sm px-2 py-1 rounded text-[9px] mono text-cyan-400 tracking-widest border border-cyan-500/30";
+                laser.style.background = "#00d2ff"; laser.style.boxShadow = "0 0 20px 5px rgba(0,210,255,0.4)";
+                
+            } else {
+                btnForex.classList.add('active-forex'); btnForex.classList.remove('text-slate-400');
+                btnOtc.classList.remove('active-otc'); btnOtc.classList.add('text-slate-400');
+                desc.innerHTML = "Suba um print do Forex (MT4/TradingView). A IA rastreará Stop Hunts institucionais e medirá Pips de alvo matematicamente.";
+                badgeCorner.innerHTML = '<i class="fa-solid fa-building-columns"></i> Engine: SMC Forex';
+                badgeCorner.className = "absolute top-0 right-0 bg-gradient-to-r from-amber-900/40 to-yellow-900/40 border-b border-l border-yellow-500/30 text-yellow-300 text-[9px] font-bold px-4 py-2 rounded-bl-2xl tracking-widest uppercase flex items-center gap-2 z-10 transition-colors";
+                targetBadge.innerHTML = '<i class="fa-solid fa-circle text-[6px] mr-1 animate-pulse"></i> TRACKING LIQUIDITY';
+                targetBadge.className = "absolute top-3 left-3 bg-black/60 backdrop-blur-sm px-2 py-1 rounded text-[9px] mono text-yellow-400 tracking-widest border border-yellow-500/30";
+                laser.style.background = "#ffd700"; laser.style.boxShadow = "0 0 20px 5px rgba(255,215,0,0.4)";
+            }
+            // Resetar painel se mudar de modo com análise feita
+            if(!document.getElementById('result-panel').classList.contains('hidden')){
+                resetApp();
+            }
+        }
+
+        // ==========================================
+        // GESTÃO DO COFRE E UPLOAD
+        // ==========================================
         function toggleVault() {
             const overlay = document.getElementById('vault-overlay');
             const drawer = document.getElementById('vault-drawer');
             const isOpen = drawer.classList.contains('open');
-            
-            if (!isOpen) {
-                document.getElementById('api-key-input').value = GEMINI_API_KEY;
-                overlay.classList.add('open');
-                drawer.classList.add('open');
-            } else {
-                overlay.classList.remove('open');
-                drawer.classList.remove('open');
-            }
+            if (!isOpen) { document.getElementById('api-key-input').value = GEMINI_API_KEY; overlay.classList.add('open'); drawer.classList.add('open'); } 
+            else { overlay.classList.remove('open'); drawer.classList.remove('open'); }
         }
 
         function saveApiKey() {
             const key = document.getElementById('api-key-input').value.trim();
             if (!key) { alert("Insira uma chave válida."); return; }
-            GEMINI_API_KEY = key;
-            localStorage.setItem("forex_vision_key", key);
-            
-            const btn = event.target;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-check"></i> Visão Ativada!';
-            btn.classList.add('bg-emerald-500');
-            
-            setTimeout(() => {
-                toggleVault();
-                btn.innerHTML = originalText;
-                btn.classList.remove('bg-emerald-500');
-            }, 1000);
+            GEMINI_API_KEY = key; localStorage.setItem("forex_vision_key", key);
+            const btn = event.target; const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Visão Ativada!'; btn.classList.add('bg-emerald-500');
+            setTimeout(() => { toggleVault(); btn.innerHTML = originalText; btn.classList.remove('bg-emerald-500'); }, 1200);
         }
 
-        // ==========================================
-        // 2. PROCESSAMENTO DE IMAGEM
-        // ==========================================
         function handleImageUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = function(e) {
                 document.getElementById('upload-box').style.display = 'none';
                 const previewBox = document.getElementById('preview-container');
-                const previewImg = document.getElementById('image-preview');
-                
-                previewImg.src = e.target.result;
+                document.getElementById('image-preview').src = e.target.result;
                 previewBox.style.display = 'block';
-                
                 base64Image = e.target.result.split(',')[1];
                 mimeType = file.type;
-
                 document.getElementById('btn-scan').disabled = false;
                 document.getElementById('btn-clear').disabled = false;
             };
@@ -344,209 +354,148 @@
         }
 
         function resetApp() {
-            base64Image = null;
-            mimeType = null;
+            base64Image = null; mimeType = null;
             document.getElementById('image-input').value = "";
             document.getElementById('preview-container').style.display = 'none';
             document.getElementById('upload-box').style.display = 'block';
-            
             document.getElementById('btn-scan').disabled = true;
             document.getElementById('btn-clear').disabled = true;
-            
             document.getElementById('result-panel').classList.add('hidden');
             document.getElementById('preview-container').classList.remove('scanning');
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         // ==========================================
-        // 3. O CÉREBRO QUANTITATIVO (AUTO-FALLBACK API)
+        // O CÉREBRO MUTANTE (OS PROMPTS BLINDADOS)
         // ==========================================
         async function runVisionAnalysis() {
             if (!base64Image) { alert("Anexe a imagem do gráfico primeiro."); return; }
-            if (!GEMINI_API_KEY) { 
-                alert("A Visão Computacional requer a chave do Gemini no Cofre."); 
-                toggleVault(); return; 
-            }
+            if (!GEMINI_API_KEY) { alert("A Visão Computacional requer a chave do Gemini no Cofre."); toggleVault(); return; }
 
             const btnScan = document.getElementById('btn-scan');
-            const btnClear = document.getElementById('btn-clear');
-            const previewContainer = document.getElementById('preview-container');
-            const resultPanel = document.getElementById('result-panel');
+            btnScan.disabled = true; document.getElementById('btn-clear').disabled = true;
+            btnScan.innerHTML = '<i class="fa-solid fa-satellite-dish fa-spin"></i> Computando Algoritmo...';
+            document.getElementById('preview-container').classList.add('scanning');
+            document.getElementById('result-panel').classList.add('hidden');
 
-            // Captura o contexto real da tela
-            const assetType = document.getElementById('asset-type').value;
-            const tf = document.getElementById('timeframe').value;
+            let promptStr = "";
 
-            btnScan.disabled = true;
-            btnClear.disabled = true;
-            btnScan.innerHTML = '<i class="fa-solid fa-satellite-dish fa-spin"></i> Lendo Estrutura de Mercado...';
-            previewContainer.classList.add('scanning');
-            resultPanel.classList.add('hidden');
+            if (currentMode === 'OTC') {
+                promptStr = `Aja como um Analista Quantitativo de Alta Frequência especializado em Engenharia Reversa de Algoritmos OTC (Opções Binárias).
+Analise o gráfico de velas anexado e procure estrita e cirurgicamente pelo setup "Inércia Algorítmica OTC".
+REGRAS:
+CALL (BUY): O mercado está em tendência de ALTA -> Descanso de 1 ou 2 velas vermelhas (pullback) -> A última vela fechada é VERDE, engolfando a vermelha anterior, e NÃO TEM PAVIO na parte superior (força de inércia).
+PUT (SELL): O mercado está em tendência de BAIXA -> Descanso de 1 ou 2 velas verdes (pullback) -> A última vela fechada é VERMELHA, engolfando a verde anterior, e NÃO TEM PAVIO na parte inferior (força de inércia).
+Se o gráfico não se encaixar 100% nisso, classifique como WAIT (Ruído).
 
-            const prompt = `Você é um robô Analista Quantitativo Institucional de Elite especializado em Price Action avançado.
-Ativo analisado: ${assetType}
-Timeframe do Gráfico: ${tf}
-
-Eu enviei a imagem de um gráfico de candlesticks. Sua missão visual e matemática:
-1. Identifique a TENDÊNCIA principal visível na imagem.
-2. Identifique o PADRÃO de candlestick mais recente ou mais forte na extrema direita (ex: Bullish Engulfing, Hammer, Shooting Star, etc).
-3. Determine as Zonas de Liquidez mais próximas visíveis na imagem (Suporte e Resistência principais).
-4. Analise a inércia do movimento de preços e PREVEJA EXATAMENTE a direção da próxima vela a se formar (BULLISH, BEARISH ou NEUTRAL).
-5. Determine a Ação do Trader: BUY (Compra), SELL (Venda) ou WAIT (Ficar de fora se o mercado estiver lateralizado ou confuso).
-
-Responda EXCLUSIVAMENTE em formato JSON puro, sem nenhum texto antes ou depois (sem aspas triplas), seguindo exatamente esta estrutura:
+Responda EXCLUSIVAMENTE em formato JSON puro, sem textos ou markdown adicionais, com esta estrutura exata:
 {
-  "trend": "ALTA" ou "BAIXA" ou "LATERAL",
-  "pattern": "Nome do Padrão Encontrado",
-  "key_levels": "Descrição resumida do Suporte e Resistência observados",
+  "pattern": "Inércia Algorítmica (CALL/PUT) ou Ruído de Mercado",
   "direction": "BUY" ou "SELL" ou "WAIT",
-  "next_candle": "BULLISH" ou "BEARISH" ou "NEUTRAL",
   "confidence": número inteiro de 0 a 100,
-  "explanation": "Explicação técnica detalhada (máximo de 3 frases) justificando a análise e a projeção visual da próxima vela."
+  "explanation": "Explique o gatilho. Ex: 'A vela verde engolfou o pullback e não deixou rejeição no topo, confirmando inércia para a próxima vela.'"
 }`;
+            } else {
+                promptStr = `Aja como um Analista Quantitativo Institucional e Matemático de Risco especializado em Smart Money Concepts (SMC) no FOREX.
+Analise o gráfico, rastreie capturas de liquidez (Stop Hunts), faça OCR na escala de preços (Eixo Y à direita) e calcule o Risco/Retorno e os Pips.
+REGRAS:
+COMPRA (BUY): Mercado caiu -> Vela de captura deixou PAVIO INFERIOR LONGO (pavio maior que o corpo) -> Vela seguinte fechou VERDE com força (engolfo/confirmação).
+VENDA (SELL): Mercado subiu -> Vela de captura deixou PAVIO SUPERIOR LONGO (pavio maior que o corpo) -> Vela seguinte fechou VERMELHA com força (engolfo/confirmação).
+CÁLCULO (Se houver sinal): Entrada = Fechamento da vela de confirmação. Stop Loss = Ponta absoluta do pavio longo. Take Profit = Distância do risco (Entrada - Stop) x 2.
+Se não houver padrão claro ou não for possível ler a escala de preços, classifique como WAIT.
 
-            const payload = {
-                contents: [{
-                    parts: [
-                        { text: prompt },
-                        { inline_data: { mime_type: mimeType, data: base64Image } }
-                    ]
-                }],
-                generationConfig: { temperature: 0.1 } 
-            };
-
-            let analysis = null;
-            let apiSuccess = false;
-            let errorMessage = "";
-
-            // O SISTEMA ANTI-TRAVAMENTO (REDUNDÂNCIA)
-            const modelsToTry = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.0-flash'];
-
-            for (const model of modelsToTry) {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
-                
-                try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    const data = await response.json();
-
-                    if (response.ok) {
-                        let textResponse = data.candidates[0].content.parts[0].text;
-                        let cleanJson = textResponse.replace(/```json/gi, '').replace(/```/g, '').trim();
-                        analysis = JSON.parse(cleanJson);
-                        apiSuccess = true;
-                        break; 
-                    } else {
-                        errorMessage = data.error?.message || "Erro desconhecido da API.";
-                        console.warn(`[Engine Fallback] Falha no ${model}: ${errorMessage}`);
-                    }
-                } catch (error) {
-                    errorMessage = error.message;
-                    console.warn(`[Engine Fallback] Erro de Rede no ${model}:`, errorMessage);
-                }
+Responda EXCLUSIVAMENTE em formato JSON puro, sem markdown, com esta estrutura exata:
+{
+  "pattern": "Captura Institucional de Liquidez ou Ausência de Sinal",
+  "direction": "BUY" ou "SELL" ou "WAIT",
+  "confidence": número inteiro de 0 a 100,
+  "explanation": "Descreva exatamente assim se houver sinal: '📍 Entrada: [Preço] \\n🛑 Stop: [Preço] \\n🎯 Alvo: [Preço] \\n📈 Lucro: O preço deve andar [X] Pips (Risco 1:2).' Se for WAIT, apenas diga 'Gráfico sem rastros institucionais claros ou escala de preço ilegível.'"
+}`;
             }
 
-            btnScan.disabled = false;
-            btnClear.disabled = false;
-            btnScan.innerHTML = '<i class="fa-solid fa-crosshairs"></i> Executar Leitura Quantitativa';
-            previewContainer.classList.remove('scanning'); 
+            // ATENÇÃO: Utilizando a Engine 1.5 PRO (Poder absoluto de OCR e raciocínio lógico)
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`;
 
-            if (apiSuccess && analysis) {
-                renderResults(analysis);
-            } else {
-                if (errorMessage.includes("API key not valid")) {
-                    alert("A chave da API está inválida. Verifique o cofre.");
-                    toggleVault();
-                } else {
-                    alert("Atenção: A Redundância falhou. Todos os servidores de Imagem da Google estão sobrecarregados agora. Tente novamente em 20 segundos.");
-                }
+            try {
+                const payload = {
+                    contents: [{ parts: [{ text: promptStr }, { inline_data: { mime_type: mimeType, data: base64Image } }] }],
+                    generationConfig: { temperature: 0.1 } // Extremamente frio e lógico
+                };
+
+                const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const data = await response.json();
+
+                if (!response.ok) throw new Error(data.error?.message || "Falha na conexão Neural.");
+
+                let textResponse = data.candidates[0].content.parts[0].text;
+                const jsonMatch = textResponse.match(/\{[\s\S]*\}/); // Garante que puxa só o JSON, ignorando textos acidentais da IA
+                if (!jsonMatch) throw new Error("A Inteligência Artificial não pôde estruturar a matriz.");
+                
+                renderResults(JSON.parse(jsonMatch[0]));
+
+            } catch (error) {
+                console.error(error);
+                if (error.message.includes("API key not valid")) { alert("Chave inválida. Verifique o cofre."); toggleVault(); } 
+                else { alert("Falha na varredura: " + error.message); }
+            } finally {
+                btnScan.disabled = false; document.getElementById('btn-clear').disabled = false;
+                btnScan.innerHTML = '<i class="fa-solid fa-crosshairs"></i> Iniciar Varredura';
+                document.getElementById('preview-container').classList.remove('scanning'); 
             }
         }
 
         // ==========================================
-        // 4. INJEÇÃO E RENDERIZAÇÃO DOS RESULTADOS
+        // RENDERIZAÇÃO DE RESULTADOS
         // ==========================================
         function renderResults(data) {
-            const card = document.querySelector('#result-panel > div');
+            const card = document.getElementById('verdict-card');
             const badge = document.getElementById('verdict-badge');
-            
-            // Dados da Grid
-            document.getElementById('res-trend').innerText = data.trend;
-            document.getElementById('res-pattern').innerText = data.pattern;
-            document.getElementById('res-levels').innerText = data.key_levels;
-            document.getElementById('ai-explanation').innerText = data.explanation;
-            
-            // Próxima Vela
-            const nextCandleIcon = document.getElementById('next-candle-icon');
-            const nextCandleText = document.getElementById('next-candle-text');
-
-            // Progress Bar
+            const pattern = document.getElementById('pattern-name');
             const confText = document.getElementById('confidence-text');
             const confBar = document.getElementById('confidence-bar');
-
-            // Limpa as classes anteriores do card e do badge
-            card.className = "glass-pro rounded-[24px] p-5 md:p-8 border-t-4 relative overflow-hidden";
-            badge.className = "inline-flex items-center gap-3 px-10 py-4 rounded-2xl border-2 font-black text-xl md:text-2xl tracking-widest uppercase shadow-xl transition-all";
-            nextCandleIcon.className = "fa-solid text-6xl mb-3 transition-all";
+            const explanation = document.getElementById('ai-explanation');
             
-            // Lógica de Cores da Ação
+            document.getElementById('laudo-title').innerText = currentMode === 'OTC' ? 'Laudo OTC (Expiração 1 Vela)' : 'Laudo Institucional Forex';
+            document.getElementById('brain-icon').className = currentMode === 'OTC' ? 'fa-solid fa-bolt text-cyan-500' : 'fa-solid fa-building-columns text-yellow-500';
+
+            // Reset Style
+            card.className = "glass rounded-[24px] p-6 md:p-8 border-t-4 transition-all duration-500 shadow-2xl relative overflow-hidden";
+            badge.className = "inline-flex items-center gap-3 px-8 py-4 rounded-2xl border-2 font-black text-xl md:text-2xl tracking-widest uppercase mb-4 shadow-xl transition-all";
+            
             if (data.direction === 'BUY') {
                 card.classList.add('border-emerald-500');
-                badge.classList.add('text-emerald-400', 'border-emerald-500', 'bg-emerald-950/40', 'shadow-[0_0_30px_rgba(16,185,129,0.3)]');
-                badge.innerHTML = `<i class="fa-solid fa-arrow-trend-up"></i> COMPRA FORTE`;
-            } 
-            else if (data.direction === 'SELL') {
+                badge.classList.add('text-emerald-400', 'border-emerald-500', 'bg-emerald-900/20', 'shadow-[0_0_30px_rgba(0,255,157,0.2)]');
+                confBar.style.background = 'linear-gradient(90deg, #008f5d, #00ff9d)';
+                badge.innerHTML = `<i class="fa-solid fa-arrow-trend-up"></i> ABRIR COMPRA (CALL)`;
+            } else if (data.direction === 'SELL') {
                 card.classList.add('border-rose-500');
-                badge.classList.add('text-rose-400', 'border-rose-500', 'bg-rose-950/40', 'shadow-[0_0_30px_rgba(239,68,68,0.3)]');
-                badge.innerHTML = `<i class="fa-solid fa-arrow-trend-down"></i> VENDA FORTE`;
-            } 
-            else { 
+                badge.classList.add('text-rose-400', 'border-rose-500', 'bg-rose-900/20', 'shadow-[0_0_30px_rgba(255,46,99,0.2)]');
+                confBar.style.background = 'linear-gradient(90deg, #cc0033, #ff2e63)';
+                badge.innerHTML = `<i class="fa-solid fa-arrow-trend-down"></i> ABRIR VENDA (PUT)`;
+            } else { 
                 card.classList.add('border-amber-500');
-                badge.classList.add('text-amber-400', 'border-amber-500', 'bg-amber-950/40', 'shadow-[0_0_30px_rgba(245,158,11,0.3)]');
-                badge.innerHTML = `<i class="fa-solid fa-hand"></i> AGUARDAR`;
+                badge.classList.add('text-amber-400', 'border-amber-500', 'bg-amber-900/20', 'shadow-[0_0_30px_rgba(255,184,0,0.2)]');
+                confBar.style.background = 'linear-gradient(90deg, #cc8f00, #ffb800)';
+                badge.innerHTML = `<i class="fa-solid fa-hand"></i> ABORTAR / AGUARDAR`;
             }
 
-            // Lógica Visão Próxima Vela
-            if(data.next_candle === 'BULLISH') {
-                nextCandleIcon.classList.add('fa-arrow-up', 'glow-green');
-                nextCandleText.className = 'text-2xl md:text-3xl font-black uppercase tracking-widest text-emerald-400';
-                nextCandleText.innerText = 'VELA DE ALTA (VERDE)';
-            } else if(data.next_candle === 'BEARISH') {
-                nextCandleIcon.classList.add('fa-arrow-down', 'glow-red');
-                nextCandleText.className = 'text-2xl md:text-3xl font-black uppercase tracking-widest text-rose-400';
-                nextCandleText.innerText = 'VELA DE BAIXA (VERM.)';
-            } else {
-                nextCandleIcon.classList.add('fa-minus', 'glow-gray');
-                nextCandleText.className = 'text-2xl md:text-3xl font-black uppercase tracking-widest text-slate-400';
-                nextCandleText.innerText = 'DOJI / INDECISÃO';
-            }
+            pattern.innerText = data.pattern;
+            explanation.innerText = data.explanation;
+            confBar.style.width = '0%'; confText.innerText = '0%';
 
-            // Animação Barra de Confiança
-            confBar.style.width = '0%';
-            confText.innerText = '0%';
-
-            document.getElementById('result-panel').classList.remove('hidden');
-            document.getElementById('result-panel').classList.add('fade-in');
+            const panel = document.getElementById('result-panel');
+            panel.classList.remove('hidden');
+            panel.classList.add('fade-in');
 
             setTimeout(() => {
                 confBar.style.width = `${data.confidence}%`;
-                
                 let c = 0;
                 let interval = setInterval(() => {
-                    c += 2;
-                    if(c >= data.confidence) {
-                        c = data.confidence;
-                        clearInterval(interval);
-                    }
+                    c += 2; if(c >= data.confidence) { c = data.confidence; clearInterval(interval); }
                     confText.innerText = `${c}%`;
                 }, 20);
-
-                document.getElementById('result-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 300);
+                panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 200);
         }
     </script>
 </body>
