@@ -123,7 +123,7 @@
     <header class="w-full max-w-2xl text-center mb-6 mt-10 px-4">
         <div class="inline-flex items-center gap-2 mb-4 px-4 py-1.5 rounded-full border border-slate-700 bg-slate-900/50 backdrop-blur-sm">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span class="text-[10px] font-bold tracking-[0.2em] text-slate-300 uppercase">Motor Neural 1.5 PRO</span>
+            <span class="text-[10px] font-bold tracking-[0.2em] text-slate-300 uppercase">Motor Neural Flash</span>
             <span class="premium-badge">DUAL</span>
         </div>
         <h1 class="text-4xl md:text-5xl font-extrabold tracking-tighter text-white mb-2">
@@ -247,12 +247,12 @@
                 <i class="fa-solid fa-shield-halved text-2xl text-cyan-400"></i>
                 <div>
                     <p class="text-xs font-bold text-white">Conexão Criptografada</p>
-                    <p class="text-[10px] text-slate-500">Motor: Gemini 1.5 PRO</p>
+                    <p class="text-[10px] text-slate-500">Motor: Gemini 1.5 FLASH</p>
                 </div>
             </div>
             
             <p class="text-xs text-slate-400 mb-6 leading-relaxed">
-                A tecnologia de precisão milimétrica e leitura OCR exige a versão PRO da API do Google. Insira sua chave para ativar os cálculos matemáticos.
+                A tecnologia de precisão milimétrica e leitura OCR exige a API do Google. Insira sua chave para ativar os cálculos matemáticos.
             </p>
             
             <label class="block text-[10px] text-cyan-400 font-bold uppercase tracking-wider mb-2">API Key Secreta</label>
@@ -413,8 +413,8 @@ Responda EXCLUSIVAMENTE em formato JSON puro, sem markdown, com esta estrutura e
 }`;
             }
 
-            // ATENÇÃO: Utilizando a Engine 1.5 PRO (Poder absoluto de OCR e raciocínio lógico)
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`;
+            // ATENÇÃO: Mudança cirúrgica para gemini-1.5-flash para resolver problemas de Free Tier
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
             try {
                 const payload = {
@@ -428,7 +428,7 @@ Responda EXCLUSIVAMENTE em formato JSON puro, sem markdown, com esta estrutura e
                 if (!response.ok) throw new Error(data.error?.message || "Falha na conexão Neural.");
 
                 let textResponse = data.candidates[0].content.parts[0].text;
-                const jsonMatch = textResponse.match(/\{[\s\S]*\}/); // Garante que puxa só o JSON, ignorando textos acidentais da IA
+                const jsonMatch = textResponse.match(/\{[\s\S]*\}/); // Garante que puxa só o JSON
                 if (!jsonMatch) throw new Error("A Inteligência Artificial não pôde estruturar a matriz.");
                 
                 renderResults(JSON.parse(jsonMatch[0]));
